@@ -625,7 +625,7 @@ def generate_report(runstyle, conn_main):
 
     # So report generated, now email the thing
     if platform.release() == '10':
-        msg_to = 'frank.bradley@serefin.com'
+        msg_to = 'ajay@synchroworks.net'
         msg_cc = msg_to
         #msg_subject = ' TESTING: HSV CC Reconciliation Report for %s' % (runstyle)
     else:
