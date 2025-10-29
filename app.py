@@ -13,6 +13,13 @@ from tqdm import tqdm
 from utils import print_exception, openmsconnection, process_input_load_lead_contracts, load_interm_csv, process_input_load_trx_interm
 from utils import process_paxticket_data, process_merchant_data, process_preferred_zone_data, generate_report
 import calendar
+import logging
+
+# Create and configure logger
+logging.basicConfig(filename="app.log",
+                    format='%(asctime)s %(message)s',
+                    filemode='a')
+
 
 #
 # This process will load a received CSV file from HSV that contacts the Contract Number and Lead Id number.
@@ -44,9 +51,13 @@ msp_db_drv = msserver['DBDriver']
 msp_usr = msserver['DBUser']
 msp_pwd = msserver['DBUserPwd']
 
+# Settings
+move_file = False
+
 
 conn_writer = openmsconnection(ms_drv, ms_svr, ms_db, ms_usr, ms_pwd)
 
+logging.info("Starting HSV Lead Contracts and CC Transactions Processing")
 
 ################################# Load Lead Contracts from HSV CSV File #################################
 for in_file in glob.glob('In/*.csv'):
@@ -57,10 +68,14 @@ for in_file in glob.glob('In/*.csv'):
     new_file_name = 'In/' + today_date + '-HSV Lead Contracts (' + str(file_index) + ').csv'
     os.rename(in_file, new_file_name)
     in_file = new_file_name
-
-    # Process the input file
-    process_input_load_lead_contracts(in_file, conn_writer)
-    # shutil.move(in_file, 'processed/')
+    try:
+        # Process the input file
+        process_input_load_lead_contracts(in_file, conn_writer)
+        if move_file:
+            shutil.move(in_file, 'processed/')
+    except Exception as e:
+        print_exception(e, in_file)
+        logging.error(f"Error processing Lead Contracts file: {in_file} - {str(e)}")
 
     file_index += 1
 
@@ -74,15 +89,20 @@ for in_file in glob.glob('InTrx/*.csv'):
     os.rename(in_file, new_file_name)
     in_file = new_file_name
 
-    print(f"File : {in_file}")
-    load_interm_csv(in_file, conn_writer)
-    # shutil.move(in_file, 'processed/')
+    try:
+        print(f"File : {in_file}")
+        load_interm_csv(in_file, conn_writer)
+        if move_file:
+            shutil.move(in_file, 'processed/')
 
-    #  Data connections and processing
-    #conn_main = openmsconnection(ms_db_drv, '192.168.0.166', ms_db, ms_usr, ms_pwd)
-    conn_main = openmsconnection(ms_drv, ms_svr, ms_db, ms_usr, ms_pwd)
- 
-    process_input_load_trx_interm(conn_main, conn_writer)   # load the new transactions into main table
+        #  Data connections and processing
+        #conn_main = openmsconnection(ms_db_drv, '192.168.0.166', ms_db, ms_usr, ms_pwd)
+        conn_main = openmsconnection(ms_drv, ms_svr, ms_db, ms_usr, ms_pwd)
+    
+        process_input_load_trx_interm(conn_main, conn_writer)   # load the new transactions into main table
+    except Exception as e:
+        print_exception(e, in_file)
+        logging.error(f"Error processing Trx Interm file: {in_file} - {str(e)}")
 
 ################################## Match CC Transactions to Leads ##################################
 month_name = calendar.month_name[datetime.today().month].upper()
@@ -94,15 +114,19 @@ conn_secondary = openmsconnection(ms_db_drv, ms_svr, ms_db, ms_usr, ms_pwd)  # N
 conn_worker = openmsconnection(msp_db_drv, msp_svr, msp_db_na, msp_usr, msp_pwd)  # NA instance access
 conn_writer = openmsconnection(ms_db_drv, ms_svr, ms_db, ms_usr, ms_pwd)  # NA instance access
 
-# Now process the data
-print ("Processing PaxTicket Data...")
-process_paxticket_data(runstyle, conn_main, conn_writer, conn_secondary, conn_worker)
+try:
+    # Now process the data
+    print ("Processing PaxTicket Data...")
+    process_paxticket_data(runstyle, conn_main, conn_writer, conn_secondary, conn_worker)
 
-print ("Processing Merchant Data...")
-process_merchant_data(runstyle, conn_main, conn_writer, conn_secondary, conn_worker)
+    print ("Processing Merchant Data...")
+    process_merchant_data(runstyle, conn_main, conn_writer, conn_secondary, conn_worker)
 
-print ("Processing Preferred Zone Data...")
-process_preferred_zone_data(runstyle, conn_main, conn_writer, conn_secondary, conn_worker)
+    print ("Processing Preferred Zone Data...")
+    process_preferred_zone_data(runstyle, conn_main, conn_writer, conn_secondary, conn_worker)
+except Exception as e:
+    print_exception(e, "Main Processing")
+    logging.error(f"Error in Main Processing: {str(e)}")
 
 conn_main.close()
 conn_secondary.close()
@@ -111,7 +135,11 @@ conn_writer.close()
 
 if include_report:
     conn_main = openmsconnection(ms_db_drv, ms_svr, ms_db, ms_usr, ms_pwd)  # NA instance access
-    generate_report(runstyle, conn_main)
+    try:
+        generate_report(runstyle, conn_main)
+    except Exception as e:
+        print_exception(e, "Generate Report")
+        logging.error(f"Error generating report: {str(e)}")
 
 
 ################################### Close Connections ###################################
