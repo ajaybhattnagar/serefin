@@ -191,6 +191,15 @@ def process_input_load_trx_interm(conn_main, conn_writer):
     Travel_Legs, import_date, period, insert_date, projno) 
     values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, '') ; """
 
+    # Get number of rows returned from sel_sql
+    cursor_all_rows = conn_main.cursor()
+    cursor_all_rows.execute( sel_sql )
+    total_rows = cursor_all_rows.fetchall()
+    total_rows = len(total_rows) + 1  # Add one as we have already
+    pbar = tqdm(total=total_rows, desc="Processing Input Load Trx ", unit="row", ncols=80)
+    cursor_all_rows.close()
+
+
     cursor_main.execute(sel_sql)
     row = cursor_main.fetchone()
 
@@ -198,7 +207,7 @@ def process_input_load_trx_interm(conn_main, conn_writer):
         #
         # process the rest of the data
         ins_data = None
-        print(f"Insert Trx : {row[0]}")
+        # print(f"Insert Trx : {row[0]}")
         try:
             ins_data = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9],
                         row[10], row[11], row[12], row[13], row[14], row[15], row[16], row[17], row[18], row[19],
@@ -215,6 +224,8 @@ def process_input_load_trx_interm(conn_main, conn_writer):
 
         row = cursor_main.fetchone()  # Process next available booking
         conn_writer.commit()
+        pbar.update(1)
+    pbar.close()
 
     # print(f"Updating Null Lead Id's\r\n")
     # cursor_writer.execute('update wrk_hsv_cc_transactions set leadid='' where leadid is null; ')
@@ -865,6 +876,14 @@ def process_paxticket_data(runstyle, conn_main, conn_writer, conn_secondary, con
     and (len(Passenger_Name) > 1 and len(Ticket_Number) > 1) 
     and Passenger_name not like '%/PREFERRED ZONE'; """
 
+    # Get number of rows to process
+    cursor_all_rows = conn_main.cursor()
+    cursor_all_rows.execute( sel_sql )
+    total_rows = cursor_all_rows.fetchall()
+    total_rows = len(total_rows) + 1  # Add one as we have already
+    pbar = tqdm(total=total_rows, desc="Processing PaxTicket ", unit="row", ncols=80)
+    cursor_all_rows.close()
+
     cursor_main.execute( sel_sql )
     main_row = cursor_main.fetchone()  # Collect the initial row to start the processing
 
@@ -1004,8 +1023,10 @@ def process_paxticket_data(runstyle, conn_main, conn_writer, conn_secondary, con
                 print_exception()
 
             conn_writer.commit()
+        pbar.update(1)
 
         main_row = cursor_main.fetchone()
+    pbar.close()
 
 
 def process_merchant_data(runstyle, conn_main, conn_writer, conn_secondary, conn_worker):
@@ -1024,6 +1045,14 @@ def process_merchant_data(runstyle, conn_main, conn_writer, conn_secondary, conn
     where (leadid = '' or leadid is null) and (projno = '' or projno is null) and (len(Passenger_Name) < 2 and len(Ticket_Number) < 2) 
     and Passenger_name not like '%/PREFERRED ZONE' ; 
     """
+
+    # Get number of rows to process
+    cursor_all_rows = conn_main.cursor()
+    cursor_all_rows.execute( sel_sql )
+    total_rows = cursor_all_rows.fetchall()
+    total_rows = len(total_rows) + 1  # Add one as we have already
+    pbar = tqdm(total=total_rows, desc="Processing Merchant Data ", unit="row", ncols=80)
+    cursor_all_rows.close()
 
     cursor_main.execute( sel_sql )
     main_row = cursor_main.fetchone()  # Collect the initial row to start the processing
@@ -1145,8 +1174,10 @@ def process_merchant_data(runstyle, conn_main, conn_writer, conn_secondary, conn
                 print_exception()
 
             conn_writer.commit()
+        pbar.update(1)
 
         main_row = cursor_main.fetchone()
+    pbar.close()
 
 
 def process_preferred_zone_data(runstyle, conn_main, conn_writer, conn_secondary, conn_worker):
@@ -1169,6 +1200,15 @@ def process_preferred_zone_data(runstyle, conn_main, conn_writer, conn_secondary
     # Merchant FROM wrk_hsv_cc_transactions
     # where transaction_id ='857929344' ;
     # """
+
+        # Get number of rows to process
+    cursor_all_rows = conn_main.cursor()
+    cursor_all_rows.execute( sel_sql )
+    total_rows = cursor_all_rows.fetchall()
+    total_rows = len(total_rows) + 1  # Add one as we have already
+    pbar = tqdm(total=total_rows, desc="Processing preferred zone  ", unit="row", ncols=80)
+    cursor_all_rows.close()
+
     cursor_main.execute( sel_sql )
     main_row = cursor_main.fetchone()  # Collect the initial row to start the processing
 
@@ -1224,5 +1264,7 @@ def process_preferred_zone_data(runstyle, conn_main, conn_writer, conn_secondary
                     print_exception()
 
                 conn_writer.commit()
+        pbar.update(1)
 
         main_row = cursor_main.fetchone()
+    pbar.close()

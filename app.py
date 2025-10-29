@@ -52,7 +52,7 @@ msp_usr = msserver['DBUser']
 msp_pwd = msserver['DBUserPwd']
 
 # Settings
-move_file = True
+move_file = False
 
 
 conn_writer = openmsconnection(ms_drv, ms_svr, ms_db, ms_usr, ms_pwd)
@@ -116,7 +116,6 @@ conn_writer = openmsconnection(ms_db_drv, ms_svr, ms_db, ms_usr, ms_pwd)  # NA i
 
 try:
     # Now process the data
-    print ("Processing PaxTicket Data...")
     process_paxticket_data(runstyle, conn_main, conn_writer, conn_secondary, conn_worker)
 
     print ("Processing Merchant Data...")
