@@ -6,6 +6,7 @@ import pyodbc
 import os
 import sys
 import platform
+import calendar
 
 # import serefin
 from utils import openmsconnection, print_exception, process_paxticket_data, process_merchant_data, process_preferred_zone_data, generate_report
@@ -75,24 +76,9 @@ msp_pwd = msserver['DBUserPwd']
 # Main code
 def main(argv):
 
-    runstyle = 'OCTOBER'
+    month_name = calendar.month_name[datetime.today().month].upper()
+    runstyle = month_name
     include_report = True
-
-    # try:
-        # opts, args = getopt.getopt(argv,"", ["run=", "report"])
-    # except getopt.GetoptError:
-        # print('match_cc_trx_backend.py --run <type_of_run> [--report]')
-        # print_exception()
-        # sys.exit(2)
-
-    # for opt, arg in opts:
-        # if opt == '-h':
-            # print('match_cc_trx_backend.py --run <type_of_run>  [--report]')
-            # sys.exit()
-        # elif opt == '--report':
-            # include_report = True
-        # elif opt == '--run':
-            # runstyle = arg
 
     conn_main = openmsconnection(ms_db_drv, ms_svr, ms_db, ms_usr, ms_pwd)  # NA instance access
     conn_secondary = openmsconnection(ms_db_drv, ms_svr, ms_db, ms_usr, ms_pwd)  # NA instance access

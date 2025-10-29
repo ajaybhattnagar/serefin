@@ -24,10 +24,8 @@ import re
 # Import ini for matching
 config = configparser.ConfigParser()
 config.sections()
-if platform.release() == '10':
-    config.read('/dev/testing_config.ini')
-else:
-    config.read(os.path.basename(sys.argv[0]).replace('.py', '.ini'))
+config.read('app.ini')
+
 # Handle Email Server information
 emailserver = config['EmailServer']
 email_server = emailserver['Server']
@@ -82,7 +80,7 @@ def process_input_load_lead_contracts(in_file, conn_writer):
 
         total_lines = sum(1 for _ in csvfile) - 1  # minus header line
         csvfile.seek(0)  # reset file read position
-        pbar = tqdm(total=total_lines, desc="Processing rows", unit="row", ncols=80)
+        pbar = tqdm(total=total_lines, desc="Loading Lead Contracts ", unit="row", ncols=80)
 
         for row in in_csv:
             if len(row) < 5:
@@ -143,7 +141,7 @@ def load_interm_csv(in_file, conn_writer):
         
         total_lines = sum(1 for _ in csvfile) - 1  # minus header line
         csvfile.seek(0)  # reset file read position
-        pbar = tqdm(total=total_lines, desc="Processing rows", unit="row", ncols=80)
+        pbar = tqdm(total=total_lines, desc="Loading Trx Interm ", unit="row", ncols=80)
 
 
         for row in in_csv:
@@ -836,6 +834,10 @@ def generate_report(runstyle, conn_main):
     send_mail(email_from, msg_to, msg_cc, msg_subject, msg_text, msg_html, report_file, email_server,
                       587, None, email_user, email_pass, True, True
                       )
+    
+    # Move the file to processed folder
+    processed_path = os.path.join(os.getcwd(), 'processed', report_file)
+    shutil.move(report_file, processed_path)
 
 
 def process_paxticket_data(runstyle, conn_main, conn_writer, conn_secondary, conn_worker):
