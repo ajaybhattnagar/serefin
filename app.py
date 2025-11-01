@@ -52,7 +52,7 @@ msp_usr = msserver['DBUser']
 msp_pwd = msserver['DBUserPwd']
 
 # Settings
-move_file = False
+move_file = True
 
 
 conn_writer = openmsconnection(ms_drv, ms_svr, ms_db, ms_usr, ms_pwd)
